@@ -25,6 +25,9 @@ jobs:
       - name: Restore dependencies
         run: dotnet restore PayLink.sln
 
+      - name: Check code formatting
+        run: dotnet format PayLink.sln --verify-no-changes --no-restore
+
       - name: Build solution
         run: dotnet build PayLink.sln --configuration Release --no-restore
 
