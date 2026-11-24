@@ -3,7 +3,7 @@
 CS352 Advanced Software Engineering, Cairo University FCAI.
 Team: Rana Sami Rizk, Rawan Youssry Ebrahim, Manal Ezzat Ahmed, Mohammed Metwally Aboelnasr.
 
-This file is the Markdown copy of Sections 1 to 6 of the team's Software Requirements Specification (the PDF report). The design models (Section 7) are in [`docs/design/`](design/). When the requirements change, update both this file and the report.
+This file is the Markdown copy of Sections 1 to 6 of the team's Software Requirements Specification. The full report, with the design models and diagrams, is [`PayLink_Requirements_Phase1.pdf`](PayLink_Requirements_Phase1.pdf). The design models (Section 7) are in [`docs/design/`](design/). When the requirements change, update both this file and the report.
 
 ## 1. Problem Summary
 
