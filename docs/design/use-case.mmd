@@ -1,0 +1,115 @@
+---
+config:
+  layout: elk
+  elk:
+    nodePlacementStrategy: NETWORK_SIMPLEX
+---
+%% PayLink - Use Case Diagram (Phase 1)
+%% Owner: Person 3 (Architecture and Data Design)
+%% Each use case has the same ID and name as its user story in requirements.md (US-01 .. US-28).
+%% Solid arrow = actor takes part in the use case. Dotted arrow = <<include>> / <<extend>>.
+flowchart LR
+  classDef actor fill:#E8EEF7,stroke:#1F3864,stroke-width:2px,color:#1F3864,font-weight:bold
+  classDef uc fill:#FFFFFF,stroke:#2E75B6,stroke-width:1.5px,color:#000000
+
+  %% ---------- Primary actors ----------
+  Customer["«actor»<br/>Customer"]:::actor
+  Agent["«actor»<br/>Agent"]:::actor
+  Admin["«actor»<br/>Administrator"]:::actor
+  Support["«actor»<br/>Customer Support<br/>Employee"]:::actor
+
+  subgraph PayLink["PayLink Backend"]
+    US01(["US-01 Customer Registration"]):::uc
+    US02(["US-02 Upgrade Customer<br/>Verification Level"]):::uc
+    US03(["US-03 View Wallet Balance<br/>and Transaction History"]):::uc
+    US04(["US-04 Top Up Wallet"]):::uc
+    US05(["US-05 Record Every Wallet<br/>Balance Change in the Ledger"]):::uc
+    US06(["US-06 Manage Billers<br/>and Services"]):::uc
+    US07(["US-07 View Available Billers<br/>and Required Input Fields"]):::uc
+    US08(["US-08 Inquire About a Bill<br/>and View Total Amount"]):::uc
+    US09(["US-09 Pay a Bill<br/>Using the Wallet"]):::uc
+    US10(["US-10 Prevent Duplicate Payments<br/>Using Idempotency"]):::uc
+    US11(["US-11 Enforce the<br/>Payment Lifecycle"]):::uc
+    US12(["US-12 Hold and Release<br/>Wallet Funds"]):::uc
+    US13(["US-13 Handle Payment Timeouts<br/>and Unknown Status"]):::uc
+    US14(["US-14 Process TopUpNet<br/>Asynchronous Callbacks"]):::uc
+    US15(["US-15 Integrate at Least<br/>Three Different Billers"]):::uc
+    US16(["US-16 Calculate the<br/>Service Fee"]):::uc
+    US17(["US-17 Agent Pays on Behalf of a<br/>Customer and Earns Commission"]):::uc
+    US18(["US-18 Reject Payments<br/>Above the Limits"]):::uc
+    US19(["US-19 Block Accounts that Pay<br/>Too Fast (Velocity Rule)"]):::uc
+    US20(["US-20 Search a Payment<br/>and View Its History"]):::uc
+    US21(["US-21 Block and Unblock<br/>an Account"]):::uc
+    US22(["US-22 Notify the Customer<br/>of the Payment Result"]):::uc
+    US23(["US-23 Retry Failed<br/>Notifications"]):::uc
+    US24(["US-24 Edit Fee and Limit Values<br/>Without Redeploying"]):::uc
+    US25(["US-25 Write an Audit Log for Money<br/>Movements and Admin Actions"]):::uc
+    US26(["US-26 Produce the Daily<br/>Reconciliation Report"]):::uc
+    US27(["US-27 Request and Approve a Refund<br/>of a Completed Payment"]):::uc
+    US28(["US-28 View Daily Totals"]):::uc
+  end
+
+  %% ---------- Secondary actors ----------
+  Card["«actor»<br/>Simulated Card<br/>Payment Service"]:::actor
+  Biller["«actor»<br/>Biller<br/>(ElectroCo, AquaCo, TopUpNet)"]:::actor
+  Notifier["«actor»<br/>External Notification<br/>Providers"]:::actor
+  Scheduler["«actor»<br/>System Scheduler"]:::actor
+
+  %% ---------- Customer ----------
+  Customer --- US01
+  Customer --- US02
+  Customer --- US03
+  Customer --- US04
+  Customer --- US07
+  Customer --- US08
+  Customer --- US09
+  Customer --- US27
+
+  %% ---------- Agent ----------
+  Agent --- US04
+  Agent --- US17
+
+  %% ---------- Administrator ----------
+  Admin --- US02
+  Admin --- US06
+  Admin --- US24
+  Admin --- US28
+
+  %% ---------- Customer Support Employee ----------
+  Support --- US20
+  Support --- US21
+  Support --- US26
+  Support --- US27
+
+  %% ---------- include / extend ----------
+  US08 -.->|«include»| US16
+  US09 -.->|«include»| US10
+  US09 -.->|«include»| US18
+  US09 -.->|«include»| US19
+  US09 -.->|«include»| US12
+  US09 -.->|«include»| US15
+  US09 -.->|«include»| US11
+  US09 -.->|«include»| US22
+  US17 -.->|«include»| US09
+  US13 -.->|«extend»<br/>no answer in 10 s| US09
+  US14 -.->|«extend»<br/>TopUpNet only| US09
+  US23 -.->|«extend»<br/>delivery fails| US22
+  US04 -.->|«include»| US05
+  US12 -.->|«include»| US05
+  US05 -.->|«include»| US25
+  US06 -.->|«include»| US25
+  US21 -.->|«include»| US25
+  US24 -.->|«include»| US25
+
+  %% ---------- Secondary actors ----------
+  US04 --- Card
+  US08 --- Biller
+  US15 --- Biller
+  US14 --- Biller
+  US13 --- Biller
+  US26 --- Biller
+  US22 --- Notifier
+  US23 --- Notifier
+  US13 --- Scheduler
+  US23 --- Scheduler
+  US26 --- Scheduler
