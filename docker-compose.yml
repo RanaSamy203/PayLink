@@ -20,7 +20,7 @@ services:
     environment:
       ACCEPT_EULA: "Y"
       MSSQL_PID: Developer
-      MSSQL_SA_PASSWORD: "${MSSQL_SA_PASSWORD}"
+      MSSQL_SA_PASSWORD: "${MSSQL_SA_PASSWORD:-PayLink_Dev_Pass123!}"
     ports:
       - "1433:1433"
     volumes:
@@ -34,7 +34,7 @@ services:
         - -U
         - sa
         - -P
-        - "${MSSQL_SA_PASSWORD}"
+        - "${MSSQL_SA_PASSWORD:-PayLink_Dev_Pass123!}"
         - -C
         - -Q
         - "SELECT 1"
