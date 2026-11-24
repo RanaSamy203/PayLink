@@ -1,0 +1,348 @@
+---
+config:
+  layout: elk
+  class:
+    hideEmptyMembersBox: true
+---
+%% PayLink - Domain Class Diagram (Phase 1)
+%% Owner: Person 3 (Architecture and Data Design)
+%% These class names are the shared vocabulary. The ER diagram uses the same names in snake_case plural,
+%% and the sequence and state diagrams must use the same names.
+%% Money is the Money value object (exact decimal, EGP), never float or double.
+classDiagram
+  direction LR
+
+  %% ===================== Accounts and Wallet =====================
+  class User {
+    <<abstract>>
+    +UUID id
+    +String fullName
+    +String phone
+    +String email
+    +String passwordHash
+    +AccountStatus status
+    +DateTime blockedUntil [0..1]
+    +isBlocked(now) boolean
+  }
+  class Customer {
+    +VerificationLevel verificationLevel
+    +upgradeToVerified() void
+  }
+  class Agent {
+    +String terminalId
+    +String shopName
+  }
+  class StaffUser {
+    +StaffRole role
+  }
+  class VerificationRequest {
+    +UUID id
+    +String documentRef
+    +RequestStatus status
+    +DateTime submittedAt
+    +DateTime decidedAt [0..1]
+  }
+  class Wallet {
+    +UUID id
+    +WalletType type
+    +String currency = EGP
+    +availableBalance() Money
+    +heldBalance() Money
+  }
+  class LedgerEntry {
+    +UUID id
+    +Money amount
+    +BalanceBucket bucket
+    +LedgerEntryType entryType
+    +String description
+    +DateTime createdAt
+  }
+  class Hold {
+    +UUID id
+    +Money amount
+    +HoldStatus status
+    +capture() void
+    +release() void
+  }
+  class TopUp {
+    +UUID id
+    +Money amount
+    +TopUpMethod method
+    +TopUpStatus status
+    +String failureReason [0..1]
+    +String idempotencyKey
+    +DateTime createdAt
+  }
+
+  %% ===================== Biller Catalog =====================
+  class Biller {
+    +UUID id
+    +String code
+    +String name
+    +BillerProtocol protocol
+    +String baseUrl
+    +int timeoutSeconds = 10
+    +boolean active
+  }
+  class BillerService {
+    +UUID id
+    +String name
+    +ServiceCategory category
+    +Money minAmount
+    +Money maxAmount
+    +boolean supportsInquiry
+    +boolean active
+  }
+  class InputField {
+    +String name
+    +String label
+    +String validationRegex
+    +boolean required
+  }
+
+  %% ===================== Fees and Commissions =====================
+  class FeeRule {
+    <<abstract>>
+    +UUID id
+    +calculate(amount) Money
+  }
+  class FixedFeeRule {
+    +Money fee
+  }
+  class PercentageFeeRule {
+    +Decimal rate
+    +Money minimumFee
+  }
+  class TieredFeeRule
+  class FeeTier {
+    +Money upTo [0..1]
+    +Money fee
+  }
+  class Promotion {
+    +UUID id
+    +DateTime startsAt
+    +DateTime endsAt
+    +isActive(now) boolean
+  }
+  class Commission {
+    +UUID id
+    +Money amount
+    +Decimal rate = 0.40
+    +DateTime createdAt
+    +DateTime reversedAt [0..1]
+  }
+
+  %% ===================== Payment Processing =====================
+  class BillInquiry {
+    +UUID id
+    +String billAccountRef
+    +Money amountDue
+    +Money fee
+    +Money total
+    +DateTime expiresAt
+  }
+  class Payment {
+    +UUID id
+    +String reference
+    +String idempotencyKey
+    +String requestHash
+    +String billAccountRef
+    +Money amount
+    +Money fee
+    +Money total
+    +PaymentStatus status
+    +String billerReference [0..1]
+    +String failureReason [0..1]
+    +int retryCount
+    +DateTime nextRetryAt [0..1]
+    +transitionTo(next, event) void
+  }
+  class PaymentStatusChange {
+    +PaymentStatus fromStatus
+    +PaymentStatus toStatus
+    +String event
+    +String reason [0..1]
+    +DateTime changedAt
+  }
+  class BillerCall {
+    +UUID id
+    +CallType callType
+    +String requestPayload
+    +String responsePayload [0..1]
+    +CallOutcome outcome
+    +int durationMs
+    +DateTime calledAt
+  }
+  class BillerCallback {
+    +UUID id
+    +String billerReference
+    +String result
+    +String rawPayload
+    +boolean duplicate
+    +DateTime receivedAt
+  }
+  class RefundRequest {
+    +UUID id
+    +String reason
+    +Money refundAmount
+    +RequestStatus status
+    +DateTime requestedAt
+    +DateTime decidedAt [0..1]
+  }
+
+  %% ===================== Notifications =====================
+  class Notification {
+    +UUID id
+    +NotificationChannel channel
+    +NotificationEvent event
+    +String recipient
+    +String body
+    +NotificationStatus status
+    +int attempts
+    +DateTime nextRetryAt [0..1]
+  }
+  class MessageTemplate {
+    +String code
+    +NotificationChannel channel
+    +NotificationEvent event
+    +String text
+  }
+
+  %% ===================== Reconciliation =====================
+  class SettlementFile {
+    +UUID id
+    +Date settlementDate
+    +String fileName
+    +DateTime receivedAt
+  }
+  class SettlementRecord {
+    +String paymentReference
+    +Money amount
+    +String billerStatus
+    +Date transactionDate
+  }
+  class ReconciliationReport {
+    +UUID id
+    +Date reportDate
+    +ReportStatus status
+    +int matchedCount
+    +int differenceCount
+  }
+  class ReconciliationDifference {
+    +DifferenceType type
+    +String details
+    +boolean resolved
+  }
+
+  %% ===================== Shared =====================
+  class Money {
+    <<value object>>
+    +Decimal amount
+    +String currency = EGP
+    +add(other) Money
+    +subtract(other) Money
+  }
+  class AuditLog {
+    +UUID id
+    +ActorType actorType
+    +UUID actorId [0..1]
+    +String action
+    +String entityType
+    +UUID entityId
+    +Money amount [0..1]
+    +String details
+    +String reason
+    +DateTime createdAt
+  }
+  class SystemSetting {
+    +String key
+    +String value
+    +DateTime updatedAt
+  }
+
+  %% ===================== Enumerations =====================
+  class PaymentStatus {
+    <<enumeration>>
+    INITIATED
+    FUNDS_HELD
+    SENT_TO_BILLER
+    COMPLETED
+    FAILED
+    UNKNOWN
+    REJECTED
+    REFUNDED
+  }
+  class LedgerEntryType {
+    <<enumeration>>
+    TOP_UP
+    HOLD
+    HOLD_RELEASE
+    CHARGE
+    FEE_INCOME
+    COMMISSION
+    COMMISSION_REVERSAL
+    REFUND
+  }
+  class WalletType {
+    <<enumeration>>
+    CUSTOMER
+    AGENT
+    PAYLINK_FEES
+    BILLER_PAYABLE
+  }
+
+  %% ===================== Relationships =====================
+  User <|-- Customer
+  User <|-- Agent
+  User <|-- StaffUser
+  Customer "1" -- "1" Wallet : owns
+  Agent "1" -- "1" Wallet : owns
+  Customer "1" -- "0..*" VerificationRequest : submits
+  StaffUser "0..1" -- "0..*" VerificationRequest : decides
+  Wallet "1" *-- "0..*" LedgerEntry : records
+  Wallet "1" -- "0..*" Hold : reserves
+  Wallet "1" -- "0..*" TopUp : receives
+  Agent "0..1" -- "0..*" TopUp : collects cash for
+  TopUp "0..1" -- "0..*" LedgerEntry : creates when SUCCEEDED
+
+  Biller "1" *-- "1..*" BillerService : offers
+  BillerService "1" *-- "1..*" InputField : requires
+  BillerService "*" --> "1" FeeRule : priced by
+  Promotion "*" --> "1" Biller : applies to
+
+  FeeRule <|-- FixedFeeRule
+  FeeRule <|-- PercentageFeeRule
+  FeeRule <|-- TieredFeeRule
+  TieredFeeRule "1" *-- "1..*" FeeTier
+
+  Customer "1" -- "0..*" BillInquiry : runs
+  BillInquiry "*" --> "1" BillerService : for
+  Customer "1" -- "0..*" Payment : pays
+  Agent "0..1" -- "0..*" Payment : made at terminal of
+  Payment "*" --> "1" BillerService : for
+  Payment "0..1" --> "0..1" BillInquiry : based on
+  Payment "1" -- "0..1" Hold : holds funds with
+  Payment "1" *-- "1..*" PaymentStatusChange : history
+  Payment "1" *-- "0..*" BillerCall : sends
+  Payment "0..1" -- "0..*" BillerCallback : receives
+  Payment "1" -- "0..1" Commission : earns
+  Commission "*" --> "1" Agent : credited to
+  Payment "0..1" -- "0..*" LedgerEntry : creates
+  Payment "1" -- "0..1" RefundRequest : refunded by
+  StaffUser "0..1" -- "0..*" RefundRequest : approves
+
+  Payment "0..1" -- "0..*" Notification : triggers
+  Notification "*" --> "1" MessageTemplate : uses
+
+  Biller "1" -- "0..*" SettlementFile : sends
+  SettlementFile "1" *-- "0..*" SettlementRecord
+  SettlementFile "1" -- "1" ReconciliationReport : produces
+  ReconciliationReport "1" *-- "0..*" ReconciliationDifference
+  ReconciliationDifference "*" --> "0..1" Payment
+  ReconciliationDifference "*" --> "0..1" SettlementRecord
+
+  StaffUser "1" -- "0..*" SystemSetting : edits
+  Payment ..> PaymentStatus
+  LedgerEntry ..> LedgerEntryType
+  Wallet ..> WalletType
+  Payment ..> Money
