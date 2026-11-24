@@ -43,7 +43,12 @@ The last command fails if any file is not formatted. Run `dotnet format PayLink.
 
 ## Continuous integration
 
-`.github/workflows/ci.yml` runs on every push and on pull requests to `main`: restore, format check, build, and tests. A pull request should only be merged when the check is green.
+`.github/workflows/ci.yml` runs on every push and on pull requests to `main`, in two jobs:
+
+1. **build-and-test:** restore, format check, build, and tests.
+2. **docker-smoke-test:** runs `docker compose up --build --wait` from a clean checkout, checks that http://localhost:8080 answers, then stops the containers.
+
+A pull request should only be merged when both jobs are green.
 
 ## Repository structure
 
