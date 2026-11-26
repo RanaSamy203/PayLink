@@ -1,0 +1,351 @@
+---
+config:
+  layout: elk
+---
+%% PayLink - ER Diagram (Phase 1)
+%% Owner: Person 3 (Architecture and Data Design)
+%% Table names are the snake_case plural of the classes in domain-class.mmd.
+%% All money columns are decimal(14,2) (exact decimal). No float or real columns.
+%% "CHECK: A, B" on a column = a CHECK constraint in the migration that allows only those values.
+%% Every time is stored as timestamp with time zone; the business day is Africa/Cairo.
+erDiagram
+
+  %% ===================== Accounts and Wallet =====================
+  wallets {
+    uuid id PK
+    varchar type "CHECK: CUSTOMER, AGENT, PAYLINK_FEES, BILLER_PAYABLE"
+    char currency "EGP"
+    timestamp created_at
+  }
+  customers {
+    uuid id PK
+    uuid wallet_id FK,UK
+    varchar full_name
+    varchar phone UK "login id in the customer app"
+    varchar email
+    varchar password_hash
+    varchar verification_level "CHECK: BASIC, VERIFIED"
+    varchar status "CHECK: ACTIVE, BLOCKED"
+    timestamp blocked_until "null = not temporarily blocked"
+    timestamp created_at
+  }
+  agents {
+    uuid id PK
+    uuid wallet_id FK,UK
+    varchar full_name
+    varchar phone UK "unique among agents; may equal a customer phone"
+    varchar password_hash
+    varchar terminal_id UK "login id at the terminal"
+    varchar shop_name
+    varchar status "CHECK: ACTIVE, BLOCKED"
+    timestamp blocked_until
+    timestamp created_at
+  }
+  staff_users {
+    uuid id PK
+    varchar full_name
+    varchar email UK "login id in the staff portal"
+    varchar password_hash
+    varchar role "CHECK: ADMINISTRATOR, SUPPORT"
+    varchar status "CHECK: ACTIVE, BLOCKED"
+    timestamp created_at
+  }
+  verification_requests {
+    uuid id PK
+    uuid customer_id FK
+    uuid decided_by FK "staff_users.id"
+    varchar document_ref
+    varchar status "CHECK: PENDING, APPROVED, REJECTED"
+    timestamp submitted_at
+    timestamp decided_at
+  }
+  ledger_entries {
+    uuid id PK
+    uuid wallet_id FK
+    uuid payment_id FK "nullable"
+    uuid top_up_id FK "nullable"
+    decimal amount "14,2 signed: + credit, - debit"
+    varchar bucket "CHECK: AVAILABLE, HELD"
+    varchar entry_type "CHECK: TOP_UP, HOLD, HOLD_RELEASE, CHARGE, FEE_INCOME, COMMISSION, COMMISSION_REVERSAL, REFUND"
+    varchar description
+    timestamp created_at
+  }
+  holds {
+    uuid id PK
+    uuid wallet_id FK
+    uuid payment_id FK,UK
+    decimal amount "14,2"
+    varchar status "CHECK: ACTIVE, CAPTURED, RELEASED"
+    timestamp created_at
+    timestamp released_at
+  }
+  top_ups {
+    uuid id PK
+    uuid wallet_id FK
+    uuid agent_id FK "nullable, set for AGENT_CASH"
+    decimal amount "14,2"
+    varchar method "CHECK: CARD, AGENT_CASH"
+    varchar status "CHECK: PENDING, SUCCEEDED, DECLINED"
+    varchar failure_reason "set when DECLINED"
+    varchar idempotency_key UK
+    timestamp created_at
+  }
+
+  %% ===================== Biller Catalog =====================
+  billers {
+    uuid id PK
+    varchar code UK
+    varchar name
+    varchar protocol "CHECK: REST_JSON, SOAP_XML, ASYNC_REST, BATCH_CSV"
+    varchar base_url
+    int timeout_seconds "default 10"
+    boolean active
+  }
+  biller_services {
+    uuid id PK
+    uuid biller_id FK
+    uuid fee_rule_id FK
+    varchar name
+    varchar category "CHECK: ELECTRICITY, WATER, MOBILE, INTERNET"
+    decimal min_amount "14,2"
+    decimal max_amount "14,2"
+    boolean supports_inquiry
+    boolean active
+  }
+  service_input_fields {
+    uuid id PK
+    uuid service_id FK
+    varchar name
+    varchar label
+    varchar validation_regex
+    boolean required
+  }
+
+  %% ===================== Fees and Commissions =====================
+  fee_rules {
+    uuid id PK
+    varchar rule_type "CHECK: FIXED, PERCENTAGE, TIERED"
+    decimal fixed_fee "14,2"
+    decimal rate "6,4"
+    decimal minimum_fee "14,2"
+  }
+  fee_tiers {
+    uuid id PK
+    uuid fee_rule_id FK
+    decimal up_to_amount "14,2 inclusive; null = no upper bound"
+    decimal fee "14,2"
+  }
+  promotions {
+    uuid id PK
+    uuid biller_id FK
+    timestamp starts_at
+    timestamp ends_at
+  }
+  commissions {
+    uuid id PK
+    uuid payment_id FK,UK
+    uuid agent_id FK
+    decimal amount "14,2"
+    decimal rate "6,4 default 0.40"
+    timestamp created_at
+    timestamp reversed_at
+  }
+
+  %% ===================== Payment Processing =====================
+  bill_inquiries {
+    uuid id PK
+    uuid customer_id FK
+    uuid service_id FK
+    varchar bill_account_ref
+    decimal amount_due "14,2"
+    decimal fee "14,2"
+    decimal total "14,2"
+    timestamp expires_at
+    timestamp created_at
+  }
+  payments {
+    uuid id PK
+    varchar reference UK
+    uuid customer_id FK
+    uuid agent_id FK "nullable"
+    uuid service_id FK
+    uuid inquiry_id FK "nullable"
+    varchar idempotency_key "UK with customer_id"
+    varchar request_hash
+    varchar bill_account_ref
+    decimal amount "14,2"
+    decimal fee "14,2"
+    decimal total "14,2"
+    varchar status "CHECK: INITIATED, FUNDS_HELD, SENT_TO_BILLER, COMPLETED, FAILED, UNKNOWN, REJECTED, REFUNDED"
+    varchar biller_reference
+    varchar failure_reason
+    int retry_count
+    timestamp next_retry_at
+    timestamp created_at
+    timestamp updated_at
+  }
+  payment_status_changes {
+    uuid id PK
+    uuid payment_id FK
+    varchar from_status "CHECK: same 8 values, null for the first row"
+    varchar to_status "CHECK: same 8 values as payments.status"
+    varchar event
+    varchar reason
+    timestamp changed_at
+  }
+  biller_calls {
+    uuid id PK
+    uuid payment_id FK "nullable for inquiries"
+    uuid biller_id FK
+    varchar call_type "CHECK: INQUIRY, PAYMENT, STATUS_QUERY"
+    text request_payload
+    text response_payload
+    varchar outcome "CHECK: SUCCESS, REFUSED, TIMEOUT, ERROR"
+    int duration_ms
+    timestamp called_at
+  }
+  biller_callbacks {
+    uuid id PK
+    uuid payment_id FK "null if unmatched"
+    uuid biller_id FK
+    varchar biller_reference
+    varchar result "CHECK: success, failed"
+    text raw_payload
+    boolean duplicate
+    timestamp received_at
+  }
+  refund_requests {
+    uuid id PK
+    uuid payment_id FK,UK
+    uuid requested_by FK "customers.id"
+    uuid decided_by FK "staff_users.id"
+    varchar reason
+    decimal refund_amount "14,2"
+    varchar status "CHECK: PENDING, APPROVED, REJECTED"
+    timestamp requested_at
+    timestamp decided_at
+  }
+
+  %% ===================== Notifications =====================
+  message_templates {
+    varchar code PK
+    varchar channel "CHECK: SMS, EMAIL, PUSH"
+    varchar event "CHECK: COMPLETED, FAILED, PROCESSING"
+    text text
+  }
+  notifications {
+    uuid id PK
+    uuid payment_id FK "nullable"
+    varchar template_code FK
+    varchar channel "CHECK: SMS, EMAIL, PUSH"
+    varchar event "CHECK: COMPLETED, FAILED, PROCESSING"
+    varchar recipient
+    text body
+    varchar status "CHECK: PENDING, DELIVERED, UNDELIVERED"
+    int attempts "max 4: 1 attempt + 3 retries"
+    timestamp next_retry_at
+    timestamp created_at
+  }
+
+  %% ===================== Reconciliation =====================
+  settlement_files {
+    uuid id PK
+    uuid biller_id FK
+    date settlement_date "UK with biller_id"
+    varchar file_name
+    timestamp received_at
+  }
+  settlement_records {
+    uuid id PK
+    uuid settlement_file_id FK
+    varchar payment_reference
+    decimal amount "14,2"
+    varchar biller_status
+    date transaction_date
+  }
+  reconciliation_reports {
+    uuid id PK
+    uuid settlement_file_id FK,UK
+    date report_date
+    varchar status "CHECK: COMPLETE, INCOMPLETE"
+    int matched_count
+    int difference_count
+    timestamp created_at
+  }
+  reconciliation_differences {
+    uuid id PK
+    uuid report_id FK
+    uuid payment_id FK "nullable"
+    uuid settlement_record_id FK "nullable"
+    varchar type "CHECK: MISSING_AT_PAYLINK, MISSING_AT_BILLER, AMOUNT_MISMATCH, STATUS_MISMATCH"
+    varchar details
+    boolean resolved
+  }
+
+  %% ===================== Shared =====================
+  system_settings {
+    varchar key PK
+    varchar value
+    uuid updated_by FK "staff_users.id"
+    timestamp updated_at
+  }
+  audit_logs {
+    uuid id PK
+    varchar actor_type "CHECK: CUSTOMER, AGENT, STAFF, SYSTEM"
+    uuid actor_id
+    varchar action
+    varchar entity_type
+    uuid entity_id
+    decimal amount "14,2 nullable"
+    varchar details "what changed"
+    varchar reason "why"
+    timestamp created_at
+  }
+
+  %% ===================== Relationships =====================
+  customers ||--|| wallets : "owns"
+  agents ||--|| wallets : "owns"
+  customers ||--o{ verification_requests : "submits"
+  staff_users |o--o{ verification_requests : "decides"
+  wallets ||--o{ ledger_entries : "records"
+  wallets ||--o{ holds : "reserves"
+  wallets ||--o{ top_ups : "receives"
+  agents |o--o{ top_ups : "collects cash for"
+  top_ups |o--o{ ledger_entries : "creates"
+  payments |o--o{ ledger_entries : "creates"
+
+  billers ||--|{ biller_services : "offers"
+  biller_services ||--|{ service_input_fields : "requires"
+  fee_rules ||--o{ biller_services : "prices"
+  fee_rules ||--o{ fee_tiers : "has"
+  billers ||--o{ promotions : "has"
+
+  customers ||--o{ bill_inquiries : "runs"
+  biller_services ||--o{ bill_inquiries : "for"
+  customers ||--o{ payments : "pays"
+  agents |o--o{ payments : "made at"
+  biller_services ||--o{ payments : "for"
+  bill_inquiries |o--o{ payments : "based on"
+  payments ||--o| holds : "holds funds with"
+  payments ||--|{ payment_status_changes : "history"
+  payments |o--o{ biller_calls : "sends"
+  billers ||--o{ biller_calls : "receives"
+  payments |o--o{ biller_callbacks : "receives"
+  billers ||--o{ biller_callbacks : "sends"
+  payments ||--o| commissions : "earns"
+  agents ||--o{ commissions : "credited to"
+  payments ||--o| refund_requests : "refunded by"
+  customers ||--o{ refund_requests : "requests"
+  staff_users |o--o{ refund_requests : "approves"
+
+  payments |o--o{ notifications : "triggers"
+  message_templates ||--o{ notifications : "uses"
+
+  billers ||--o{ settlement_files : "sends"
+  settlement_files ||--o{ settlement_records : "contains"
+  settlement_files ||--|| reconciliation_reports : "produces"
+  reconciliation_reports ||--o{ reconciliation_differences : "lists"
+  payments |o--o{ reconciliation_differences : "flagged in"
+  settlement_records |o--o{ reconciliation_differences : "flagged in"
+
+  staff_users |o--o{ system_settings : "edits"
