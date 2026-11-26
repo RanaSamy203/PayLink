@@ -1,3 +1,4 @@
+
 # PayLink – Software Requirements Specification (Phase 1)
 
 CS352 Advanced Software Engineering – Faculty of Computers and Artificial Intelligence, Cairo University
@@ -9,14 +10,21 @@ CS352 Advanced Software Engineering – Faculty of Computers and Artificial Inte
 | Manal Ezzat Ahmed | 20242450 |
 | Mohammed Metwally Aboelnasr | Has no Id |
 
+
+## This file is the Markdown copy of Sections 1 to 6 of the team's Software Requirements Specification. The full report, with the design models and diagrams, is [`PayLink_Requirements_Phase1.pdf`](PayLink_Requirements_Phase1.pdf). The design models (Section 7) are in [`docs/design/`](design/). When the requirements change, update both this file and the report.
+
 ## 1. Problem Summary
+
 PAY LINK is an Egyptian digital payment platform that provides customers with a digital wallet for paying utility bills and purchasing mobile top-ups. The system supports payments for electricity, water, mobile and internet services through external billers, and it also supports payments made through agents. Customers can register, manage wallet funds, view available and held balances, inquire about bills, and pay them without visiting service providers' offices.
 
 The main problem addressed by PAY LINK is the need to process financial transactions accurately, securely and reliably across different billers. Since the platform holds customers' money, it must prevent duplicate charges and negative balances, record every money movement, and correctly handle failed, delayed or uncertain payment responses. Before sending a payment to a biller, the system checks applicable limits and fraud rules and places the required amount on hold. It then completes the charge only after confirmation, or releases the hold when the payment is confirmed to have failed.
 
 PAY LINK also handles different biller communication formats, service fees, agent commissions, notifications and reconciliation against biller settlement files. Its goal is to provide a dependable and maintainable backend that can handle high transaction volumes and allow additional billers to be integrated with minimal changes to existing modules.
 
+Technology stack (declared in Phase 1 and fixed afterwards, as the brief requires): the backend is written in C# with ASP.NET Core on .NET 9, the relational database is Microsoft SQL Server 2022, tests use xUnit, the application and database run locally with Docker and Docker Compose, and GitHub Actions builds, checks formatting and tests every push.
+
 ## 2. Stakeholders
+
 | **Stakeholder** | **Interest / Role** |
 |---|---|
 | **Customers** | Register and manage their accounts and wallets, add funds, inquire about bills, make payments, view transaction history and receive notifications. |
@@ -28,9 +36,11 @@ PAY LINK also handles different biller communication formats, service fees, agen
 | **External Notification Providers** | SMS, email and push-notification services used to deliver payment confirmations, failures and other customer messages. |
 
 ## 3. User Stories
+
 The following user stories are mapped one-to-one to FR in the PayLink project brief. Each story includes its actor, description, precondition, postcondition, acceptance criteria and representative normal and exceptional scenarios, and its priority (Must, Should or Could). Stories 1 to 15 were written by the requirements lead and stories 16 to 28 by the requirements and quality lead.
 
-### User Story #1 – Customer Registration
+### User Story #1: Customer Registration
+
 | **User Story ID** | US-01 (based on FR-1) |
 |---|---|
 | **User Story Name** | Customer Registration |
@@ -42,17 +52,20 @@ The following user stories are mapped one-to-one to FR in the PayLink project br
 | **Priority** | Must |
 
 #### Normal Scenario
+
 | **Actor Action** | **System Response** |
 |---|---|
 | The visitor enters the required registration details. | The system validates the submitted information. |
 | The visitor submits the registration form. | The system creates the account with Basic verification level and returns a success confirmation. |
 
 #### Exceptional Scenario
+
 | **Actor Action** | **System Response** |
 |---|---|
 | The visitor submits missing or invalid information, or information already used by another account. | The system rejects the request, explains the validation error, and does not create a duplicate or incomplete account. |
 
-### User Story #2 – Upgrade Customer Verification Level
+### User Story #2: Upgrade Customer Verification Level
+
 | **User Story ID** | US-02 (based on FR-2) |
 |---|---|
 | **User Story Name** | Upgrade Customer Verification Level |
@@ -64,17 +77,20 @@ The following user stories are mapped one-to-one to FR in the PayLink project br
 | **Priority** | Should |
 
 #### Normal Scenario
+
 | **Actor Action** | **System Response** |
 |---|---|
 | The customer submits the required verification information. | The system records the submitted information for verification. |
 | The verification is approved. | The system changes the account level to Verified and applies the higher limits. |
 
 #### Exceptional Scenario
+
 | **Actor Action** | **System Response** |
 |---|---|
 | Verification is rejected or required information is incomplete. | The system keeps the account at Basic level, retains the Basic limit, and informs the customer of the result. |
 
-### User Story #3 – View Wallet Balance and Transaction History
+### User Story #3: View Wallet Balance and Transaction History
+
 | **User Story ID** | US-03 (based on FR-3) |
 |---|---|
 | **User Story Name** | View Wallet Balance and Transaction History |
@@ -86,17 +102,20 @@ The following user stories are mapped one-to-one to FR in the PayLink project br
 | **Priority** | Must |
 
 #### Normal Scenario
+
 | **Actor Action** | **System Response** |
 |---|---|
 | The customer opens the wallet or transaction-history section. | The system retrieves the customer's wallet and transaction records. |
 | The customer views the details. | The system displays available balance, held balance and transaction history. |
 
 #### Exceptional Scenario
+
 | **Actor Action** | **System Response** |
 |---|---|
 | The customer is not authenticated or requests another customer's wallet. | The system denies access and does not disclose wallet or transaction information. |
 
-### User Story #4 – Top Up Wallet
+### User Story #4: Top Up Wallet
+
 | **User Story ID** | US-04 (based on FR-4) |
 |---|---|
 | **User Story Name** | Top Up Wallet |
@@ -108,17 +127,20 @@ The following user stories are mapped one-to-one to FR in the PayLink project br
 | **Priority** | Must |
 
 #### Normal Scenario
+
 | **Actor Action** | **System Response** |
 |---|---|
 | The customer selects simulated card or agent cash and enters the top-up amount. | The system validates the amount and selected method. |
 | The top-up is confirmed. | The system credits the wallet and confirms the new transaction. |
 
 #### Exceptional Scenario
+
 | **Actor Action** | **System Response** |
 |---|---|
 | The amount is invalid or the simulated payment is declined. | The system rejects the top-up, leaves the wallet balance unchanged, and returns a clear failure message. |
 
-### User Story #5 – Record Every Wallet Balance Change in the Ledger
+### User Story #5: Record Every Wallet Balance Change in the Ledger
+
 | **User Story ID** | US-05 (based on FR-5) |
 |---|---|
 | **User Story Name** | Record Every Wallet Balance Change in the Ledger |
@@ -130,17 +152,20 @@ The following user stories are mapped one-to-one to FR in the PayLink project br
 | **Priority** | Must |
 
 #### Normal Scenario
+
 | **Actor Action** | **System Response** |
 |---|---|
 | A valid wallet operation is initiated. | The system validates and processes the operation. |
 | The operation is committed. | The system stores the ledger entry linked to the operation and reflects it in the calculated balance. |
 
 #### Exceptional Scenario
+
 | **Actor Action** | **System Response** |
 |---|---|
 | The operation fails before it is committed. | The system does not record a misleading completed money movement; any related ledger changes are rolled back or consistently compensated. |
 
-### User Story #6 – Manage Billers and Services
+### User Story #6: Manage Billers and Services
+
 | **User Story ID** | US-06 (based on FR-6) |
 |---|---|
 | **User Story Name** | Manage Billers and Services |
@@ -152,17 +177,20 @@ The following user stories are mapped one-to-one to FR in the PayLink project br
 | **Priority** | Must |
 
 #### Normal Scenario
+
 | **Actor Action** | **System Response** |
 |---|---|
 | The administrator selects add, edit or disable for a biller or service. | The system displays the relevant fields or current details. |
 | The administrator submits the change. | The system validates and saves the change, then confirms the result. |
 
 #### Exceptional Scenario
+
 | **Actor Action** | **System Response** |
 |---|---|
 | A user without administrator rights attempts the operation, or the required data is invalid. | The system rejects the change, preserves the existing catalog data, and returns an appropriate error. |
 
-### User Story #7 – View Available Billers and Required Input Fields
+### User Story #7: View Available Billers and Required Input Fields
+
 | **User Story ID** | US-07 (based on FR-7) |
 |---|---|
 | **User Story Name** | View Available Billers and Required Input Fields |
@@ -174,17 +202,20 @@ The following user stories are mapped one-to-one to FR in the PayLink project br
 | **Priority** | Must |
 
 #### Normal Scenario
+
 | **Actor Action** | **System Response** |
 |---|---|
 | The customer opens the bill-payment catalog. | The system retrieves active billers and services. |
 | The customer selects a biller or service. | The system displays the required fields, such as meter number or phone number. |
 
 #### Exceptional Scenario
+
 | **Actor Action** | **System Response** |
 |---|---|
 | A biller or service is disabled or unavailable. | The system does not offer it as an available payment option and informs the customer if it is selected through an outdated request. |
 
-### User Story #8 – Inquire About a Bill and View Total Amount
+### User Story #8: Inquire About a Bill and View Total Amount
+
 | **User Story ID** | US-08 (based on FR-8) |
 |---|---|
 | **User Story Name** | Inquire About a Bill and View Total Amount |
@@ -196,17 +227,20 @@ The following user stories are mapped one-to-one to FR in the PayLink project br
 | **Priority** | Must |
 
 #### Normal Scenario
+
 | **Actor Action** | **System Response** |
 |---|---|
 | The customer selects a biller and enters the required reference, such as a meter number. | The system validates the input and sends an inquiry to the selected biller. |
 | The biller returns the amount due. | The system calculates the fee and displays the bill amount, fee and total. |
 
 #### Exceptional Scenario
+
 | **Actor Action** | **System Response** |
 |---|---|
 | The reference is invalid or the biller cannot return an inquiry result. | The system displays a clear inquiry error and does not proceed to payment. |
 
-### User Story #9 – Pay a Bill Using the Wallet
+### User Story #9: Pay a Bill Using the Wallet
+
 | **User Story ID** | US-09 (based on FR-9) |
 |---|---|
 | **User Story Name** | Pay a Bill Using the Wallet |
@@ -218,6 +252,7 @@ The following user stories are mapped one-to-one to FR in the PayLink project br
 | **Priority** | Must |
 
 #### Normal Scenario
+
 | **Actor Action** | **System Response** |
 |---|---|
 | The customer reviews the bill amount, fee and total, then confirms payment. | The system checks the account, limits and available funds. |
@@ -225,11 +260,13 @@ The following user stories are mapped one-to-one to FR in the PayLink project br
 | The biller confirms payment. | The system completes the payment and returns a confirmation. |
 
 #### Exceptional Scenario
+
 | **Actor Action** | **System Response** |
 |---|---|
 | The wallet has insufficient funds or a required check fails. | The system rejects the payment, does not call the biller, and provides the reason to the customer. |
 
-### User Story #10 – Prevent Duplicate Payments Using Idempotency
+### User Story #10: Prevent Duplicate Payments Using Idempotency
+
 | **User Story ID** | US-10 (based on FR-10) |
 |---|---|
 | **User Story Name** | Prevent Duplicate Payments Using Idempotency |
@@ -241,17 +278,20 @@ The following user stories are mapped one-to-one to FR in the PayLink project br
 | **Priority** | Must |
 
 #### Normal Scenario
+
 | **Actor Action** | **System Response** |
 |---|---|
 | The customer submits a payment request with a new idempotency key. | The system processes the request and stores the key with the result. |
 | The customer or client retries using the same key. | The system returns the stored result and does not repeat the payment operation. |
 
 #### Exceptional Scenario
+
 | **Actor Action** | **System Response** |
 |---|---|
 | The same idempotency key is reused with conflicting request data. | The system rejects the conflicting request and does not create an additional payment. |
 
-### User Story #11 – Enforce the Payment Lifecycle
+### User Story #11: Enforce the Payment Lifecycle
+
 | **User Story ID** | US-11 (based on FR-11) |
 |---|---|
 | **User Story Name** | Enforce the Payment Lifecycle |
@@ -263,6 +303,7 @@ The following user stories are mapped one-to-one to FR in the PayLink project br
 | **Priority** | Must |
 
 #### Normal Scenario
+
 | **Actor Action** | **System Response** |
 |---|---|
 | A payment is initiated and passes fraud and balance checks. | The system moves it from Initiated to FundsHeld. |
@@ -270,11 +311,13 @@ The following user stories are mapped one-to-one to FR in the PayLink project br
 | The biller confirms, refuses or does not respond before timeout. | The system moves it respectively to Completed, Failed or Unknown. |
 
 #### Exceptional Scenario
+
 | **Actor Action** | **System Response** |
 |---|---|
 | An event attempts an undefined transition, such as completing a Rejected payment. | The system rejects the transition, preserves the current valid state and records the invalid attempt where appropriate. |
 
-### User Story #12 – Hold and Release Wallet Funds
+### User Story #12: Hold and Release Wallet Funds
+
 | **User Story ID** | US-12 (based on FR-12) |
 |---|---|
 | **User Story Name** | Hold and Release Wallet Funds |
@@ -286,17 +329,20 @@ The following user stories are mapped one-to-one to FR in the PayLink project br
 | **Priority** | Must |
 
 #### Normal Scenario
+
 | **Actor Action** | **System Response** |
 |---|---|
 | The customer confirms a valid payment. | The system moves the total payable amount from available to held balance before contacting the biller. |
 | The biller confirms success. | The system converts the hold into the final charge. |
 
 #### Exceptional Scenario
+
 | **Actor Action** | **System Response** |
 |---|---|
 | The biller refuses the payment and the failure is confirmed. | The payment moves to Failed, then the system releases the held amount to the available balance and the payment moves to Refunded, following the defined lifecycle. |
 
-### User Story #13 – Handle Payment Timeouts and Unknown Status
+### User Story #13: Handle Payment Timeouts and Unknown Status
+
 | **User Story ID** | US-13 (based on FR-13) |
 |---|---|
 | **User Story Name** | Handle Payment Timeouts and Unknown Status |
@@ -308,17 +354,20 @@ The following user stories are mapped one-to-one to FR in the PayLink project br
 | **Priority** | Must |
 
 #### Normal Scenario
+
 | **Actor Action** | **System Response** |
 |---|---|
 | The system sends a payment request to the biller. | The system waits for a response up to the configured 10-second timeout. |
 | No response arrives within the timeout. | The system marks the payment Unknown, keeps the hold, informs the customer and schedules the defined retries. |
 
 #### Exceptional Scenario
+
 | **Actor Action** | **System Response** |
 |---|---|
 | A retry or later biller response confirms success or failure. | The system updates the payment to the corresponding valid state; it does not automatically refund an Unknown payment before confirming that the biller did not receive it. |
 
-### User Story #14 – Process TopUpNet Asynchronous Callbacks
+### User Story #14: Process TopUpNet Asynchronous Callbacks
+
 | **User Story ID** | US-14 (based on FR-14) |
 |---|---|
 | **User Story Name** | Process TopUpNet Asynchronous Callbacks |
@@ -330,17 +379,20 @@ The following user stories are mapped one-to-one to FR in the PayLink project br
 | **Priority** | Must |
 
 #### Normal Scenario
+
 | **Actor Action** | **System Response** |
 |---|---|
 | The system sends a TopUpNet payment request and receives an accepted response. | The system keeps the payment in the SentToBiller state and waits for the callback. |
 | TopUpNet sends a success or failed callback. | The system validates and matches the callback, then updates the payment according to the lifecycle. |
 
 #### Exceptional Scenario
+
 | **Actor Action** | **System Response** |
 |---|---|
 | TopUpNet sends the same callback more than once or sends an unmatched/invalid callback. | The system ignores duplicate callbacks and logs them; invalid or unmatched callbacks do not change a payment. |
 
-### User Story #15 – Integrate at Least Three Different Billers
+### User Story #15: Integrate at Least Three Different Billers
+
 | **User Story ID** | US-15 (based on FR-15) |
 |---|---|
 | **User Story Name** | Integrate at Least Three Different Billers |
@@ -352,17 +404,20 @@ The following user stories are mapped one-to-one to FR in the PayLink project br
 | **Priority** | Must |
 
 #### Normal Scenario
+
 | **Actor Action** | **System Response** |
 |---|---|
 | The customer selects an electricity, water or mobile top-up service. | The system identifies the corresponding biller integration. |
 | The system sends a request to the selected biller. | The integration uses the biller's specified protocol and maps the response into the common PayLink result. |
 
 #### Exceptional Scenario
+
 | **Actor Action** | **System Response** |
 |---|---|
 | A biller returns an error, times out or is unavailable. | The system handles the failure according to that biller's behavior without preventing the other biller integrations from operating. |
 
-### User Story #16 – Calculate the Service Fee
+### User Story #16: Calculate the Service Fee
+
 | **User Story ID** | US-16 (based on FR-16) |
 |---|---|
 | **User Story Name** | Calculate the Service Fee |
@@ -374,6 +429,7 @@ The following user stories are mapped one-to-one to FR in the PayLink project br
 | **Priority** | Must |
 
 #### Normal Scenario
+
 | **Actor Action** | **System Response** |
 |---|---|
 | The customer inquires about a 350.00 EGP electricity bill. | The system applies the fixed fee and displays: amount 350.00, fee 2.50, total 352.50 EGP. |
@@ -381,12 +437,14 @@ The following user stories are mapped one-to-one to FR in the PayLink project br
 | The customer inquires about a 250.00 EGP internet bill during the configured promotion period of that biller. | The system sets the fee to 0.00 EGP and displays a total of 250.00 EGP. |
 
 #### Exceptional Scenario
+
 | **Actor Action** | **System Response** |
 |---|---|
 | The promotion has not started, has already ended, or the selected biller is not the promoted one. | The system applies the standard fee rule of that service. |
 | The fee rule or amount is missing or invalid. | The system does not show a total, returns a clear error and does not allow the payment to continue. |
 
-### User Story #17 – Agent Pays on Behalf of a Customer and Earns Commission
+### User Story #17: Agent Pays on Behalf of a Customer and Earns Commission
+
 | **User Story ID** | US-17 (based on FR-17) |
 |---|---|
 | **User Story Name** | Agent Pays on Behalf of a Customer and Earns Commission |
@@ -398,18 +456,21 @@ The following user stories are mapped one-to-one to FR in the PayLink project br
 | **Priority** | Should |
 
 #### Normal Scenario
+
 | **Actor Action** | **System Response** |
 |---|---|
 | The agent identifies the customer, selects the biller and confirms a 350.00 EGP electricity payment. | The system processes the payment through the normal payment life cycle and stores the agent as the source of the payment. |
 | The biller confirms the payment. | The system completes the payment and credits the agent wallet with 1.00 EGP (40% of the 2.50 EGP fee) through a ledger entry. |
 
 #### Exceptional Scenario
+
 | **Actor Action** | **System Response** |
 |---|---|
 | The payment is Rejected, Failed or still Unknown. | No commission is credited. If the payment later becomes Completed, the commission is credited at that time. |
 | The fee is 0 EGP because of a promotion. | The commission is 0.00 EGP and no commission entry for a positive amount is created. |
 
-### User Story #18 – Reject Payments Above the Limits
+### User Story #18: Reject Payments Above the Limits
+
 | **User Story ID** | US-18 (based on FR-18) |
 |---|---|
 | **User Story Name** | Reject Payments Above the Limits |
@@ -421,17 +482,20 @@ The following user stories are mapped one-to-one to FR in the PayLink project br
 | **Priority** | Must |
 
 #### Normal Scenario
+
 | **Actor Action** | **System Response** |
 |---|---|
 | A Basic customer who already paid 4,900.00 EGP today requests a 200.00 EGP payment. | The total would be 5,100.00 EGP, so the system rejects the payment with the reason "daily limit exceeded". |
 | A Basic customer who paid 4,800.00 EGP today requests a 200.00 EGP payment. | The total equals exactly 5,000.00 EGP, so the limit is not exceeded and the payment continues. |
 
 #### Exceptional Scenario
+
 | **Actor Action** | **System Response** |
 |---|---|
 | A customer requests a 4.99 EGP payment or a 10,000.01 EGP payment. | The system rejects the payment with the reason "below minimum" or "above maximum single payment" and the payment is Rejected. |
 
-### User Story #19 – Block Accounts that Pay Too Fast (Velocity Rule)
+### User Story #19: Block Accounts that Pay Too Fast (Velocity Rule)
+
 | **User Story ID** | US-19 (based on FR-19) |
 |---|---|
 | **User Story Name** | Block Accounts that Pay Too Fast (Velocity Rule) |
@@ -443,18 +507,21 @@ The following user stories are mapped one-to-one to FR in the PayLink project br
 | **Priority** | Should |
 
 #### Normal Scenario
+
 | **Actor Action** | **System Response** |
 |---|---|
 | A customer submits a sixth new payment request 40 seconds after the first one. | The system rejects the request, blocks the account for 10 minutes and tells the customer when the block ends. |
 | The customer submits a new payment request 11 minutes later. | The block has expired, so the request is processed normally. |
 
 #### Exceptional Scenario
+
 | **Actor Action** | **System Response** |
 |---|---|
 | A blocked customer tries to pay during the 10 minutes. | The system rejects the request with the reason "account temporarily blocked" and does not call the biller. |
 | The client repeats a request with an idempotency key that was already used. | The repeated request returns the original result and does not count as a new payment in the velocity rule. |
 
-### User Story #20 – Search a Payment and View Its History
+### User Story #20: Search a Payment and View Its History
+
 | **User Story ID** | US-20 (based on FR-20) |
 |---|---|
 | **User Story Name** | Search a Payment and View Its History |
@@ -466,17 +533,20 @@ The following user stories are mapped one-to-one to FR in the PayLink project br
 | **Priority** | Must |
 
 #### Normal Scenario
+
 | **Actor Action** | **System Response** |
 |---|---|
 | The support employee enters a payment reference. | The system finds the payment and displays amount, fee, biller, customer, agent (if any) and current state. |
 | The support employee opens the history. | The system displays the ordered list of state changes, biller calls and responses, notifications sent and ledger entries. |
 
 #### Exceptional Scenario
+
 | **Actor Action** | **System Response** |
 |---|---|
 | The reference does not exist, or the user is not a support employee. | The system shows "payment not found" or denies access, and does not disclose any payment data. |
 
-### User Story #21 – Block and Unblock an Account
+### User Story #21: Block and Unblock an Account
+
 | **User Story ID** | US-21 (based on FR-21) |
 |---|---|
 | **User Story Name** | Block and Unblock an Account |
@@ -488,17 +558,20 @@ The following user stories are mapped one-to-one to FR in the PayLink project br
 | **Priority** | Should |
 
 #### Normal Scenario
+
 | **Actor Action** | **System Response** |
 |---|---|
 | The support employee selects an account and blocks it with a reason. | The system marks the account as blocked and writes an audit record. |
 | The support employee unblocks the account. | The system allows new payments again and writes an audit record. |
 
 #### Exceptional Scenario
+
 | **Actor Action** | **System Response** |
 |---|---|
 | A user without support rights tries to block an account, or the account is already blocked. | The system denies the action, or reports that the account is already blocked, and changes nothing. |
 
-### User Story #22 – Notify the Customer of the Payment Result
+### User Story #22: Notify the Customer of the Payment Result
+
 | **User Story ID** | US-22 (based on FR-22) |
 |---|---|
 | **User Story Name** | Notify the Customer of the Payment Result |
@@ -510,17 +583,20 @@ The following user stories are mapped one-to-one to FR in the PayLink project br
 | **Priority** | Must |
 
 #### Normal Scenario
+
 | **Actor Action** | **System Response** |
 |---|---|
 | A payment is completed by the biller. | The system sends an SMS and a push message with the reference and the amount. |
 | A payment is refused by the biller (Failed). | The system sends an SMS and a push message with the reason, and tells the customer that the held amount is returned. |
 
 #### Exceptional Scenario
+
 | **Actor Action** | **System Response** |
 |---|---|
 | The SMS provider is down when the payment completes. | The payment still stays Completed; the failed message is handled by the retry rule of US-23. |
 
-### User Story #23 – Retry Failed Notifications
+### User Story #23: Retry Failed Notifications
+
 | **User Story ID** | US-23 (based on FR-23) |
 |---|---|
 | **User Story Name** | Retry Failed Notifications |
@@ -532,17 +608,20 @@ The following user stories are mapped one-to-one to FR in the PayLink project br
 | **Priority** | Should |
 
 #### Normal Scenario
+
 | **Actor Action** | **System Response** |
 |---|---|
 | The first delivery attempt fails. | The system schedules retry 1 and keeps the notification pending. |
 | Retry 2 succeeds. | The system marks the notification as delivered and stops retrying. |
 
 #### Exceptional Scenario
+
 | **Actor Action** | **System Response** |
 |---|---|
 | All 3 retries fail. | The system marks the notification as undelivered, records it in the log and leaves the payment Completed. |
 
-### User Story #24 – Edit Fee and Limit Values Without Redeploying
+### User Story #24: Edit Fee and Limit Values Without Redeploying
+
 | **User Story ID** | US-24 (based on FR-24) |
 |---|---|
 | **User Story Name** | Edit Fee and Limit Values Without Redeploying |
@@ -554,17 +633,20 @@ The following user stories are mapped one-to-one to FR in the PayLink project br
 | **Priority** | Should |
 
 #### Normal Scenario
+
 | **Actor Action** | **System Response** |
 |---|---|
 | The administrator changes the electricity fee from 2.50 EGP to 3.00 EGP. | The system validates and saves the value, and records the change in the audit log. |
 | A customer inquires about an electricity bill after the change. | The system calculates the fee with the new value of 3.00 EGP. |
 
 #### Exceptional Scenario
+
 | **Actor Action** | **System Response** |
 |---|---|
 | The administrator enters an invalid value, such as a negative fee, a minimum above the maximum, or an end date before the start date. | The system rejects the change, keeps the previous values and returns a clear error. |
 
-### User Story #25 – Write an Audit Log for Money Movements and Admin Actions
+### User Story #25: Write an Audit Log for Money Movements and Admin Actions
+
 | **User Story ID** | US-25 (based on FR-25) |
 |---|---|
 | **User Story Name** | Write an Audit Log for Money Movements and Admin Actions |
@@ -576,17 +658,20 @@ The following user stories are mapped one-to-one to FR in the PayLink project br
 | **Priority** | Must |
 
 #### Normal Scenario
+
 | **Actor Action** | **System Response** |
 |---|---|
 | A payment completes and the fee and commission are posted. | The system writes an audit record for each money movement, linked to the payment reference. |
 | An administrator disables a biller. | The system writes an audit record with the administrator, the time, the biller and the reason. |
 
 #### Exceptional Scenario
+
 | **Actor Action** | **System Response** |
 |---|---|
 | The audit record cannot be written. | The system does not commit the operation, so no money movement exists without an audit record. |
 
-### User Story #26 – Produce the Daily Reconciliation Report
+### User Story #26: Produce the Daily Reconciliation Report
+
 | **User Story ID** | US-26 (based on FR-26) |
 |---|---|
 | **User Story Name** | Produce the Daily Reconciliation Report |
@@ -598,6 +683,7 @@ The following user stories are mapped one-to-one to FR in the PayLink project br
 | **Priority** | Should |
 
 #### Normal Scenario
+
 | **Actor Action** | **System Response** |
 |---|---|
 | The nightly job reads the settlement file of a biller. | The system matches the entries with PayLink payments by reference, amount and status. |
@@ -605,11 +691,13 @@ The following user stories are mapped one-to-one to FR in the PayLink project br
 | A payment is in the Unknown state and the file lists it, or the file does not contain it. | The system moves it to Completed if listed, or to Failed if not found, following the life cycle. |
 
 #### Exceptional Scenario
+
 | **Actor Action** | **System Response** |
 |---|---|
 | The settlement file is missing, empty, malformed or duplicated. | The system marks the reconciliation of that biller and day as incomplete, raises an alert, changes no payment and allows a rerun. |
 
-### User Story #27 – Request and Approve a Refund of a Completed Payment
+### User Story #27: Request and Approve a Refund of a Completed Payment
+
 | **User Story ID** | US-27 (based on FR-27) |
 |---|---|
 | **User Story Name** | Request and Approve a Refund of a Completed Payment |
@@ -621,18 +709,21 @@ The following user stories are mapped one-to-one to FR in the PayLink project br
 | **Priority** | Could |
 
 #### Normal Scenario
+
 | **Actor Action** | **System Response** |
 |---|---|
 | The customer submits a refund request with a reason. | The system stores the request as pending and notifies support. |
 | The support employee approves the request. | The system credits the wallet, links the refund to the payment, reverses the agent commission if any, and notifies the customer. |
 
 #### Exceptional Scenario
+
 | **Actor Action** | **System Response** |
 |---|---|
 | The payment is not Completed, or it was already refunded. | The system rejects the request with a clear reason and creates no ledger entry. |
 | The support employee rejects the request. | The system keeps the wallet unchanged and informs the customer of the decision. |
 
-### User Story #28 – View Daily Totals
+### User Story #28: View Daily Totals
+
 | **User Story ID** | US-28 (based on FR-28) |
 |---|---|
 | **User Story Name** | View Daily Totals |
@@ -644,17 +735,20 @@ The following user stories are mapped one-to-one to FR in the PayLink project br
 | **Priority** | Could |
 
 #### Normal Scenario
+
 | **Actor Action** | **System Response** |
 |---|---|
 | The administrator selects a date. | The system calculates the totals from the payments and ledger entries of that business day. |
 | The administrator views the result. | The system displays the payments, fees, commissions and failures per biller. |
 
 #### Exceptional Scenario
+
 | **Actor Action** | **System Response** |
 |---|---|
 | The selected day has no payments, the date is in the future, or the user is not an administrator. | The system shows zero totals, rejects the future date, or denies access, respectively. |
 
 ## 4. Non-Functional Requirements
+
 The following measurable non-functional requirements were chosen by the team. Each one has a target number and a way to verify it, so the tests and reports of Phase 2 can show the result.
 
 | **ID** | **Category** | **Requirement** | **Measure / target** | **Verification** | **Priority** |
@@ -671,6 +765,7 @@ The following measurable non-functional requirements were chosen by the team. Ea
 | NFR-10 | Deployability | A clean clone starts with one command. | After docker compose up, the health check reports healthy within 2 minutes on a clean clone and the CI pipeline on the phase tag is green. | Clean-clone check and CI status | Should |
 
 ## 5. Priorities (Must, Should, Could)
+
 Each functional requirement keeps the priority given in the project brief. No Must requirement was removed or downgraded. Summary: 19 Must, 7 Should and 2 Could requirements (28 in total).
 
 | **FR** | **User story** | **Name** | **Priority** |
@@ -705,6 +800,7 @@ Each functional requirement keeps the priority given in the project brief. No Mu
 | FR-28 | US-28 | View Daily Totals | Could |
 
 ## 6. Ambiguities, Questions, and Team Decisions
+
 While preparing the user stories, we found some points that needed clarification. The team discussed these points and agreed on the following decisions. Items 1 to 10 come from stories 1 to 15; items 11 to 26 come from stories 16 to 28 and the non-functional requirements. The tags (R..) refer to the FR numbers of the brief.
 
 | **No.** | **Ambiguity / Question** | **Team Decision** |
@@ -722,7 +818,7 @@ While preparing the user stories, we found some points that needed clarification
 | 11 | Is the 200 EGP boundary of the internet fee included in the lower tier, and how is a percentage fee rounded? **(R16)** | "Up to 200 EGP" includes 200.00 (fee 2 EGP); above 200.00 the fee is 4 EGP. Percentage fees are rounded half-up to 2 decimals using exact decimal types, then the 1 EGP minimum is applied. |
 | 12 | Is the fee calculated on the bill amount or on a total that already includes other charges? **(R16)** | The fee is calculated on the bill amount returned by the biller. The total is bill amount plus fee. |
 | 13 | How does the promotion work, and what happens to the agent commission when the fee is 0? **(R16)** | A promotion applies to one chosen biller between a configurable start and end date and sets the fee to 0 EGP. The commission is 40% of the fee, so it is also 0.00 EGP. |
-| 14 | Whose wallet is debited when an agent pays on behalf of a customer? **(R17)** | The customer wallet is debited (the customer is identified and confirms at the terminal, details of the confirmation are out of scope in Phase 1). The agent is stored on the payment and receives the commission when it completes. We will confirm this with the TA. |
+| 14 | Whose wallet is debited when an agent pays on behalf of a customer? **(R17)** | The customer wallet is debited (the customer is identified and confirms at the terminal, details of the confirmation are out of scope in Phase 1). The agent is stored on the payment and receives the commission when it completes. This is the team’s final decision for Phase 1. |
 | 15 | What happens to the commission if the payment fails or is refunded later? **(R17)** | The commission is credited only when the payment is Completed. If a Completed payment is refunded (FR-27), the commission is reversed with a ledger entry. |
 | 16 | Do the limits include the fee, and which payments count in the daily limit? **(R18)** | Limits apply to the bill amount only. The daily total counts payments in FundsHeld, SentToBiller, Unknown and Completed; Rejected, Failed and Refunded payments are not counted. The day is the calendar day in Africa/Cairo time. |
 | 17 | A Basic account has a 5,000 EGP daily limit but the single-payment maximum is 10,000 EGP. Which applies? **(R18)** | The stricter limit applies. A Basic customer cannot pay a bill above 5,000 EGP, and the rejection reason names the daily limit. |
@@ -732,6 +828,6 @@ While preparing the user stories, we found some points that needed clarification
 | 21 | Does "retried 3 times" include the first attempt? **(R23)** | No. One first attempt plus 3 retries (4 attempts at most), then the notification is marked undelivered. The delay between retries is configurable. |
 | 22 | Do changed fee and limit values affect payments that are already in progress? **(R24)** | No. Changes apply to new payments only. Every change is validated and written to the audit log. |
 | 23 | What is the settlement file format, and what can reconciliation change? **(R26)** | The mock settlement file is a CSV with reference, amount, status and date. Reconciliation only flags differences for support review. It changes a payment only when the payment is Unknown: found in the file becomes Completed, not found becomes Failed (as in the life cycle). |
-| 24 | Completed is a final state, so how can a Completed payment be refunded? **(R27)** | The refund is a separate Refund record with a ledger entry linked to the payment, approved by support. The payment stays Completed. The full amount paid by the customer (bill amount and fee) is returned and any agent commission is reversed. Reversal at the biller is handled outside the system. We will confirm this with the TA. |
+| 24 | Completed is a final state, so how can a Completed payment be refunded? **(R27)** | The refund is a separate Refund record with a ledger entry linked to the payment, approved by support. The payment stays Completed. The full amount paid by the customer (bill amount and fee) is returned and any agent commission is reversed. Reversal at the biller is handled outside the system. This is the team’s final decision for Phase 1. |
 | 25 | Which time zone defines the business day for daily totals and reconciliation? **(R28)** | Africa/Cairo. |
 | 26 | Is the NetCo batch integration included in Phase 1? **(R15)** | No. It is optional in the brief. The design keeps room for it as one more biller adapter. |

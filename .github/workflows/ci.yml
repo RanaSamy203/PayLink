@@ -33,3 +33,40 @@ jobs:
 
       - name: Run tests
         run: dotnet test PayLink.sln --configuration Release --no-build
+
+  docker-smoke-test:
+    # Checks the brief's rule that a clean clone starts with `docker compose up`.
+    runs-on: ubuntu-latest
+    needs: build-and-test
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Start the API and database from a clean checkout
+        run: docker compose up --build --detach --wait --wait-timeout 300
+
+      - name: Check that the API answers
+        run: |
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent --show-error http://localhost:8080/; then
+              echo
+              echo "API answered on attempt $attempt"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "API did not answer within 60 seconds"
+          exit 1
+
+      - name: Show container status
+        if: always()
+        run: docker compose ps --all
+
+      - name: Show container logs on failure
+        if: failure()
+        run: docker compose logs
+
+      - name: Stop and remove containers
+        if: always()
+        run: docker compose down --volumes
