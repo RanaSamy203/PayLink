@@ -1,0 +1,20 @@
+
+sequenceDiagram
+    actor Customer
+    participant API as PayLink API
+    participant Payment as Payment Processing
+    participant Wallet
+    participant Ledger
+    participant Notification
+
+    Payment->>Payment: Receive biller refusal
+    Payment->>Payment: Change payment state to Failed
+    Payment->>Wallet: Release held amount
+    Wallet->>Ledger: Record refund entry
+    Ledger-->>Wallet: Refund recorded
+    Wallet-->>Payment: Hold released successfully
+    Payment->>Payment: Change payment state to Refunded
+    Payment->>Notification: Send failure and refund notification
+    Notification-->>Customer: Notify customer
+    Payment-->>API: Return Refunded status
+    API-->>Customer: Display refunded payment status

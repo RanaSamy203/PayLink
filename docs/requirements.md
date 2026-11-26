@@ -1,9 +1,17 @@
-# PayLink Requirements (Phase 1)
 
-CS352 Advanced Software Engineering, Cairo University FCAI.
-Team: Rana Sami Rizk, Rawan Youssry Ebrahim, Manal Ezzat Ahmed, Mohammed Metwally Aboelnasr.
+# PayLink – Software Requirements Specification (Phase 1)
 
-This file is the Markdown copy of Sections 1 to 6 of the team's Software Requirements Specification. The full report, with the design models and diagrams, is [`PayLink_Requirements_Phase1.pdf`](PayLink_Requirements_Phase1.pdf). The design models (Section 7) are in [`docs/design/`](design/). When the requirements change, update both this file and the report.
+CS352 Advanced Software Engineering – Faculty of Computers and Artificial Intelligence, Cairo University
+
+| **Name** | **ID** |
+|---|---|
+| Rana Samy Rizk | 20242126 |
+| Rawan Youssry Ebrahim | 20242130 |
+| Manal Ezzat Ahmed | 20242450 |
+| Mohammed Metwally Aboelnasr | Has no Id |
+
+
+## This file is the Markdown copy of Sections 1 to 6 of the team's Software Requirements Specification. The full report, with the design models and diagrams, is [`PayLink_Requirements_Phase1.pdf`](PayLink_Requirements_Phase1.pdf). The design models (Section 7) are in [`docs/design/`](design/). When the requirements change, update both this file and the report.
 
 ## 1. Problem Summary
 

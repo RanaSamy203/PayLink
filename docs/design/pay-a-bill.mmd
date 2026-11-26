@@ -1,0 +1,39 @@
+
+sequenceDiagram
+    actor Customer
+    participant API as PayLink API
+    participant Wallet
+    participant Fraud as Fraud Checks
+    participant Biller as ElectroCo
+    participant Notification
+
+    Customer->>API: Submit bill payment request
+    API->>API: Verify customer and daily limit
+    API->>Biller: Request bill inquiry
+    Biller-->>API: Return bill amount
+    API->>API: Calculate service fee and total
+    API->>Fraud: Check payment risk
+
+    alt Fraud check fails or funds insufficient
+        Fraud-->>API: Reject payment
+        API-->>Customer: Payment rejected
+    else Checks pass
+        Fraud-->>API: Approved
+        API->>Wallet: Hold total amount
+        Wallet-->>API: Funds held
+        API->>Biller: Send payment request
+
+        alt Biller confirms payment
+            Biller-->>API: Payment confirmed
+            API->>Wallet: Finalize held amount
+            API->>Notification: Send receipt notification
+            Notification-->>Customer: Payment receipt
+            API-->>Customer: Payment completed
+        else Biller refuses payment
+            Biller-->>API: Payment refused
+            API-->>Customer: Payment failed
+        else Biller timeout
+            Biller-->>API: No response before timeout
+            API-->>Customer: Payment status unknown
+        end
+    end
